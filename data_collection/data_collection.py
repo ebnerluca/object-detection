@@ -11,10 +11,19 @@ def save_npz(img, boxes, classes):
         npz_index += 1
 
 def clean_segmented_image(seg_img):
+    """ Steps:
+        - clean the noise
+        - remove white, yellow and red lines (and black road?)
+        - make bounding boxes for each segmentation
+        - identify classes ??
+    """
     # TODO
     # Tip: use either of the two display functions found in util.py to ensure that your cleaning produces clean masks
     # (ie masks akin to the ones from PennFudanPed) before extracting the bounding boxes
     pass
+
+    # display_img_seg_mask(seg_img)
+    # display_seg_mask(seg_img)
     # return boxes, classes
 
 seed(123)

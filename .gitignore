@@ -4,3 +4,5 @@ venv
 .npz
 *.pt
 !Dockerfile.pt
+launch.json
+settings.json
