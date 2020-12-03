@@ -1,7 +1,8 @@
 import numpy as np
-
+import cv2
 from agent import PurePursuitPolicy
 from utils import launch_env, seed, makedirs, display_seg_mask, display_img_seg_mask
+import matplotlib.pyplot as plt # might not need
 
 npz_index = 0
 def save_npz(img, boxes, classes):
@@ -12,19 +13,86 @@ def save_npz(img, boxes, classes):
 
 def clean_segmented_image(seg_img):
     """ Steps:
-        - clean the noise
-        - remove white, yellow and red lines (and black road?)
+        - split the image into 5 images consisting of each class
+        - identify classes
+        - clean the noise (use findContours?)
         - make bounding boxes for each segmentation
-        - identify classes ??
+        note that seg_img is probably intended to be in the RGB color space
+        as the simulation renders it the same as plt.imshow()
     """
-    # TODO
-    # Tip: use either of the two display functions found in util.py to ensure that your cleaning produces clean masks
-    # (ie masks akin to the ones from PennFudanPed) before extracting the bounding boxes
-    pass
 
-    # display_img_seg_mask(seg_img)
-    # display_seg_mask(seg_img)
-    # return boxes, classes
+    # split image by color in HSV, from 
+    # https://pinetools.com/image-color-picker, note these values need to scaled
+    # to fit cv2 HSV. online range: (359,99,99), cv2 range: (179,255,255)
+    # 0: background is (300,100,100) (pink) 
+    # 1: duckie is (231.9,56,66) to (231.5,56,89) (blue)
+    # 2: cone is (4.8,55,44) to (4.8,56,89) (coral)
+    # 3: truck is (280,3,46) to (258,3,) (gray)
+    # 4: bus is (46.6,93,85) (yellow)
+    # try without tolerance (2nd value) first
+
+    color_ranges = {
+        0: {'low': (149, 254, 254), 'high': (151, 256, 256)},
+        1: {'low': (110, 140, 170), 'high': (120, 150, 255)},
+        2: {'low': (2, 141, 113), 'high': (3, 145, 230)},
+        3: {'low': (139, 6, 116), 'high': (141, 26, 120)},
+        4: {'low': (22, 236, 215), 'high': (24, 238, 217)}
+    }
+
+    # debugging: show seg_img
+    plt.imshow(seg_img)
+    plt.show()
+
+    seg_img_hsv = cv2.cvtColor(seg_img, cv2.COLOR_RGB2HSV)
+
+    # to find ranges use:
+    # plt.imshow(seg_img_hsv)
+    # plt.show() # then point mouse at object
+
+    boxes = []
+    classes = []
+    for class_ in range(5):
+        # find mask for class color range
+        mask = cv2.inRange(seg_img_hsv, color_ranges[class_]['low'],color_ranges[class_]['high'])
+
+        # debugging: shows the masks
+        result = cv2.bitwise_and(seg_img.copy(), seg_img, mask=mask)
+        plt.imshow(result)
+        plt.show()
+
+        # find the contours (ignoring max noise area)
+        contours, _ = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        contours = [contour for contour in contours if cv2.contourArea(contour) > 10]
+
+        # debugging: shows the contours
+        img = cv2.drawContours(seg_img.copy(), contours, -1, (0,255,0), 3)
+        plt.imshow(img)
+        plt.show()
+
+        # find the bounding boxes for each contour
+        for contour in contours:
+            # debugging: shows the contour
+            img = cv2.drawContours(seg_img.copy(), contour, -1, (0,255,0), 3)
+            plt.imshow(img)
+            plt.show()
+
+            xmin, ymin, width, height = cv2.boundingRect(contour)
+            xmax, ymax = (xmin + width, ymin + height)
+            box = [xmin, ymin, xmax, ymax]
+            boxes.append(box)
+            classes.append(class_)
+
+            # debugging: show the boxes
+            img = cv2.rectangle(seg_img.copy(), tuple(box[0:2]),tuple(box[2:4]) , (0,255,0) , 2)
+            plt.imshow(img)
+            plt.show()
+            
+
+    boxes = np.array(boxes)
+    classes = np.array(classes)
+
+    return boxes, classes
+
 
 seed(123)
 environment = launch_env()
@@ -49,7 +117,7 @@ while True:
         rewards.append(rew)
         environment.render(segment=int(nb_of_steps / 50) % 2 == 0)
 
-        # TODO boxes, classes = clean_segmented_image(segmented_obs)
+        boxes, classes = clean_segmented_image(segmented_obs)
         # TODO save_npz(obs, boxes, classes)
 
         nb_of_steps += 1
