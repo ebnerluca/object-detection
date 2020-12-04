@@ -2,10 +2,25 @@ import numpy as np
 import cv2
 from agent import PurePursuitPolicy
 from utils import launch_env, seed, makedirs, display_seg_mask, display_img_seg_mask
-import matplotlib.pyplot as plt # might not need
+import matplotlib.pyplot as plt # for visualisation
 
+"""
+    Open questions:
+    - do we need to include the background class as it's not there in the
+    examples?
+    - how should we make the dataset images 244x244x3, crop or squash?
+"""
+
+debug = False
 npz_index = 0
 def save_npz(img, boxes, classes):
+    """ Save the non-segmented observation, boxes and classes of one instant
+        into an npz file in dataset directory.
+        img = 244x244x3 array
+        boxes = list of [xmin, ymin, xmax, ymax]
+        labels = np array corresponding to boxes
+    """
+
     global npz_index
     with makedirs("./data_collection/dataset"):
         np.savez(f"./data_collection/dataset/{npz_index}.npz", *(img, boxes, classes))
@@ -39,9 +54,10 @@ def clean_segmented_image(seg_img):
         4: {'low': (22, 236, 215), 'high': (24, 238, 217)}
     }
 
-    # debugging: show seg_img
-    plt.imshow(seg_img)
-    plt.show()
+    if debug: # show seg_img
+        plt.imshow(seg_img)
+        plt.title("Segmented image")
+        plt.show()
 
     seg_img_hsv = cv2.cvtColor(seg_img, cv2.COLOR_RGB2HSV)
 
@@ -55,26 +71,29 @@ def clean_segmented_image(seg_img):
         # find mask for class color range
         mask = cv2.inRange(seg_img_hsv, color_ranges[class_]['low'],color_ranges[class_]['high'])
 
-        # debugging: shows the masks
-        result = cv2.bitwise_and(seg_img.copy(), seg_img, mask=mask)
-        plt.imshow(result)
-        plt.show()
+        if debug: # shows the masks
+            result = cv2.bitwise_and(seg_img.copy(), seg_img, mask=mask)
+            plt.imshow(result)
+            plt.title(f"Mask of class {class_}")
+            plt.show()
 
         # find the contours (ignoring max noise area)
         contours, _ = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if cv2.contourArea(contour) > 10]
+        contours = [contour for contour in contours if cv2.contourArea(contour) > 10] # TODO: check this is a good max noise size
 
-        # debugging: shows the contours
-        img = cv2.drawContours(seg_img.copy(), contours, -1, (0,255,0), 3)
-        plt.imshow(img)
-        plt.show()
+        if debug: # shows the contours
+            img = cv2.drawContours(seg_img.copy(), contours, -1, (0,255,0), 3)
+            plt.imshow(img)
+            plt.title(f"Contours for class {class_}")
+            plt.show()
 
         # find the bounding boxes for each contour
         for contour in contours:
-            # debugging: shows the contour
-            img = cv2.drawContours(seg_img.copy(), contour, -1, (0,255,0), 3)
-            plt.imshow(img)
-            plt.show()
+            if debug: # shows the contour
+                img = cv2.drawContours(seg_img.copy(), contour, -1, (0,255,0), 3)
+                plt.imshow(img)
+                plt.title(f"Contour for class {class_}")
+                plt.show()
 
             xmin, ymin, width, height = cv2.boundingRect(contour)
             xmax, ymax = (xmin + width, ymin + height)
@@ -82,13 +101,13 @@ def clean_segmented_image(seg_img):
             boxes.append(box)
             classes.append(class_)
 
-            # debugging: show the boxes
-            img = cv2.rectangle(seg_img.copy(), tuple(box[0:2]),tuple(box[2:4]) , (0,255,0) , 2)
-            plt.imshow(img)
-            plt.show()
+            if debug: # show the boxes
+                img = cv2.rectangle(seg_img.copy(), tuple(box[0:2]),tuple(box[2:4]) , (0,255,0) , 2)
+                plt.imshow(img)
+                plt.title(f"Box for class {class_}")
+                plt.show()
             
 
-    boxes = np.array(boxes)
     classes = np.array(classes)
 
     return boxes, classes
@@ -117,8 +136,15 @@ while True:
         rewards.append(rew)
         environment.render(segment=int(nb_of_steps / 50) % 2 == 0)
 
+        # resize images to 244x244x3, ready for dataset
+        y, x, _ = obs.shape
+        startx = x//2-(244//2)
+        starty = y//2-(244//2)
+        obs = obs[starty:starty+244,startx:startx+244]
+        segmented_obs = segmented_obs[starty:starty+244,startx:startx+244]
+
         boxes, classes = clean_segmented_image(segmented_obs)
-        # TODO save_npz(obs, boxes, classes)
+        save_npz(obs, boxes, classes)
 
         nb_of_steps += 1
 
