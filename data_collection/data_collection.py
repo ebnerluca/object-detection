@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt # for visualisation
     - do we need to include the background class as it's not there in the
     examples?
     - how should we make the dataset images 244x244x3, crop or squash?
+    - skip a few frames for dataset
 """
 
 debug = False
@@ -25,6 +26,8 @@ def save_npz(img, boxes, classes):
     with makedirs("./data_collection/dataset"):
         np.savez(f"./data_collection/dataset/{npz_index}.npz", *(img, boxes, classes))
         npz_index += 1
+
+    print(f"Saved {npz_index}.npz")
 
 def clean_segmented_image(seg_img):
     """ Steps:
@@ -67,7 +70,7 @@ def clean_segmented_image(seg_img):
 
     boxes = []
     classes = []
-    for class_ in range(5):
+    for class_ in range(1, 5): # skip background class
         # find mask for class color range
         mask = cv2.inRange(seg_img_hsv, color_ranges[class_]['low'],color_ranges[class_]['high'])
 
@@ -79,7 +82,7 @@ def clean_segmented_image(seg_img):
 
         # find the contours (ignoring max noise area)
         contours, _ = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if cv2.contourArea(contour) > 10] # TODO: check this is a good max noise size
+        contours = [contour for contour in contours if cv2.contourArea(contour) > 20] # note min noise area is 10
 
         if debug: # shows the contours
             img = cv2.drawContours(seg_img.copy(), contours, -1, (0,255,0), 3)
@@ -120,6 +123,8 @@ policy = PurePursuitPolicy(environment)
 
 MAX_STEPS = 500
 
+SAMPLE_FREQ = 10
+
 while True:
     obs = environment.reset()
     environment.render(segment=True)
@@ -137,14 +142,15 @@ while True:
         environment.render(segment=int(nb_of_steps / 50) % 2 == 0)
 
         # resize images to 244x244x3, ready for dataset
-        y, x, _ = obs.shape
-        startx = x//2-(244//2)
-        starty = y//2-(244//2)
-        obs = obs[starty:starty+244,startx:startx+244]
-        segmented_obs = segmented_obs[starty:starty+244,startx:startx+244]
+        # y, x, _ = obs.shape
+        # startx = x//2-(244//2)
+        # starty = y//2-(244//2)
+        # obs = obs[starty:starty+244,startx:startx+244]
+        # segmented_obs = segmented_obs[starty:starty+244,startx:startx+244]
 
-        boxes, classes = clean_segmented_image(segmented_obs)
-        save_npz(obs, boxes, classes)
+        if nb_of_steps % SAMPLE_FREQ == 0:
+            boxes, classes = clean_segmented_image(segmented_obs)
+            save_npz(obs, boxes, classes)
 
         nb_of_steps += 1
 
