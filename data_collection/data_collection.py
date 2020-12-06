@@ -25,9 +25,9 @@ def save_npz(img, boxes, classes):
     global npz_index
     with makedirs("./data_collection/dataset"):
         np.savez(f"./data_collection/dataset/{npz_index}.npz", *(img, boxes, classes))
+        print(f"Saved {npz_index}.npz")
         npz_index += 1
 
-    print(f"Saved {npz_index}.npz")
 
 def clean_segmented_image(seg_img):
     """ Steps:
@@ -82,7 +82,7 @@ def clean_segmented_image(seg_img):
 
         # find the contours (ignoring max noise area)
         contours, _ = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        contours = [contour for contour in contours if cv2.contourArea(contour) > 20] # note min noise area is 10
+        contours = [contour for contour in contours if cv2.contourArea(contour) > 2] # note min noise area is 10
 
         if debug: # shows the contours
             img = cv2.drawContours(seg_img.copy(), contours, -1, (0,255,0), 3)
@@ -142,11 +142,14 @@ while True:
         environment.render(segment=int(nb_of_steps / 50) % 2 == 0)
 
         # resize images to 244x244x3, ready for dataset
-        # y, x, _ = obs.shape
-        # startx = x//2-(244//2)
-        # starty = y//2-(244//2)
-        # obs = obs[starty:starty+244,startx:startx+244]
-        # segmented_obs = segmented_obs[starty:starty+244,startx:startx+244]
+        # height, width, channels = np.shape(obs)
+        # left_border = int(width/2 - height/2)
+        # right_border = int(width/2 + height/2)
+        # obs = obs[:, left_border:right_border, :]  # cut off sides to make img square
+        # segmented_obs = segmented_obs[:, left_border:right_border, :]  # cut off sides to make img square
+
+        obs = cv2.resize(obs, (224, 224))
+        segmented_obs = cv2.resize(segmented_obs, (224, 224))
 
         if nb_of_steps % SAMPLE_FREQ == 0:
             boxes, classes = clean_segmented_image(segmented_obs)
