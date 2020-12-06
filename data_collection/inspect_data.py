@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 # dataset_folder = "./data_collection/dataset/"  # assuming you run from within repo root folder
-dataset_folder = "./newstyle_validation_dataset/"
+dataset_folder = "./eval/dataset-new/"
 print(f"Inspecting data from folder {dataset_folder}...")
 min_idx = 0
 max_idx = 1999
