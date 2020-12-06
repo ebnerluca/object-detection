@@ -151,13 +151,14 @@ if __name__ == "__main__":
             rewards.append(rew)
             environment.render(segment=int(nb_of_steps / 50) % 2 == 0)
 
-            # resize images to 244x244x3, ready for dataset
+            # cropping observation to square
             # height, width, channels = np.shape(obs)
             # left_border = int(width/2 - height/2)
             # right_border = int(width/2 + height/2)
             # obs = obs[:, left_border:right_border, :]  # cut off sides to make img square
             # segmented_obs = segmented_obs[:, left_border:right_border, :]  # cut off sides to make img square
 
+            # resize images to 244x244x3, ready for dataset
             obs = cv2.resize(obs, (224, 224))
             segmented_obs = cv2.resize(segmented_obs, (224, 224))
 
