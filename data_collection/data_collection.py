@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import os
 from agent import PurePursuitPolicy
 from utils import launch_env, seed, makedirs, display_seg_mask, display_img_seg_mask
 import matplotlib.pyplot as plt # for visualisation
@@ -12,8 +13,7 @@ import matplotlib.pyplot as plt # for visualisation
     - skip a few frames for dataset
 """
 
-debug = False
-npz_index = 0
+
 def save_npz(img, boxes, classes):
     """ Save the non-segmented observation, boxes and classes of one instant
         into an npz file in dataset directory.
@@ -21,13 +21,17 @@ def save_npz(img, boxes, classes):
         boxes = list of [xmin, ymin, xmax, ymax]
         labels = np array corresponding to boxes
     """
+    global NPZ_INDEX
+    dir_path = os.path.dirname(os.path.realpath(__file__))  # path to this file's directory
+    dataset_path = os.path.join(dir_path, "dataset")
 
-    global npz_index
-    with makedirs("./data_collection/dataset"):
-        np.savez(f"./data_collection/dataset/{npz_index}.npz", *(img, boxes, classes))
-        npz_index += 1
+    with makedirs(dataset_path):
+        filepath = os.path.join(dataset_path, f"{NPZ_INDEX}.npz")
+        np.savez(filepath, *(img, boxes, classes))
+        NPZ_INDEX += 1
 
-    print(f"Saved {npz_index}.npz")
+    print(f"Saved {NPZ_INDEX - 1}.npz")
+
 
 def clean_segmented_image(seg_img):
     """ Steps:
@@ -57,7 +61,7 @@ def clean_segmented_image(seg_img):
         4: {'low': (22, 236, 215), 'high': (24, 238, 217)}
     }
 
-    if debug: # show seg_img
+    if DEBUG:  # show seg_img
         plt.imshow(seg_img)
         plt.title("Segmented image")
         plt.show()
@@ -74,7 +78,7 @@ def clean_segmented_image(seg_img):
         # find mask for class color range
         mask = cv2.inRange(seg_img_hsv, color_ranges[class_]['low'],color_ranges[class_]['high'])
 
-        if debug: # shows the masks
+        if DEBUG: # shows the masks
             result = cv2.bitwise_and(seg_img.copy(), seg_img, mask=mask)
             plt.imshow(result)
             plt.title(f"Mask of class {class_}")
@@ -84,7 +88,7 @@ def clean_segmented_image(seg_img):
         contours, _ = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         contours = [contour for contour in contours if cv2.contourArea(contour) > 20] # note min noise area is 10
 
-        if debug: # shows the contours
+        if DEBUG: # shows the contours
             img = cv2.drawContours(seg_img.copy(), contours, -1, (0,255,0), 3)
             plt.imshow(img)
             plt.title(f"Contours for class {class_}")
@@ -92,7 +96,7 @@ def clean_segmented_image(seg_img):
 
         # find the bounding boxes for each contour
         for contour in contours:
-            if debug: # shows the contour
+            if DEBUG: # shows the contour
                 img = cv2.drawContours(seg_img.copy(), contour, -1, (0,255,0), 3)
                 plt.imshow(img)
                 plt.title(f"Contour for class {class_}")
@@ -104,7 +108,7 @@ def clean_segmented_image(seg_img):
             boxes.append(box)
             classes.append(class_)
 
-            if debug: # show the boxes
+            if DEBUG: # show the boxes
                 img = cv2.rectangle(seg_img.copy(), tuple(box[0:2]),tuple(box[2:4]) , (0,255,0) , 2)
                 plt.imshow(img)
                 plt.title(f"Box for class {class_}")
@@ -116,43 +120,48 @@ def clean_segmented_image(seg_img):
     return boxes, classes
 
 
-seed(123)
-environment = launch_env()
+if __name__ == "__main__":
 
-policy = PurePursuitPolicy(environment)
+    DEBUG = False
+    NPZ_INDEX = 0
 
-MAX_STEPS = 500
+    seed(123)
+    environment = launch_env()
 
-SAMPLE_FREQ = 10
+    policy = PurePursuitPolicy(environment)
 
-while True:
-    obs = environment.reset()
-    environment.render(segment=True)
-    rewards = []
+    MAX_STEPS = 500
 
-    nb_of_steps = 0
+    SAMPLE_FREQ = 10
 
     while True:
-        action = policy.predict(np.array(obs))
+        obs = environment.reset()
+        environment.render(segment=True)
+        rewards = []
 
-        obs, rew, done, misc = environment.step(action) # Gives non-segmented obs as numpy array
-        segmented_obs = environment.render_obs(True)  # Gives segmented obs as numpy array
+        nb_of_steps = 0
 
-        rewards.append(rew)
-        environment.render(segment=int(nb_of_steps / 50) % 2 == 0)
+        while True:
+            action = policy.predict(np.array(obs))
 
-        # resize images to 244x244x3, ready for dataset
-        # y, x, _ = obs.shape
-        # startx = x//2-(244//2)
-        # starty = y//2-(244//2)
-        # obs = obs[starty:starty+244,startx:startx+244]
-        # segmented_obs = segmented_obs[starty:starty+244,startx:startx+244]
+            obs, rew, done, misc = environment.step(action) # Gives non-segmented obs as numpy array
+            segmented_obs = environment.render_obs(True)  # Gives segmented obs as numpy array
 
-        if nb_of_steps % SAMPLE_FREQ == 0:
-            boxes, classes = clean_segmented_image(segmented_obs)
-            save_npz(obs, boxes, classes)
+            rewards.append(rew)
+            environment.render(segment=int(nb_of_steps / 50) % 2 == 0)
 
-        nb_of_steps += 1
+            # resize images to 244x244x3, ready for dataset
+            # y, x, _ = obs.shape
+            # startx = x//2-(244//2)
+            # starty = y//2-(244//2)
+            # obs = obs[starty:starty+244,startx:startx+244]
+            # segmented_obs = segmented_obs[starty:starty+244,startx:startx+244]
 
-        if done or nb_of_steps > MAX_STEPS:
-            break
+            if nb_of_steps % SAMPLE_FREQ == 0:
+                boxes, classes = clean_segmented_image(segmented_obs)
+                save_npz(obs, boxes, classes)
+
+            nb_of_steps += 1
+
+            if done or nb_of_steps > MAX_STEPS:
+                break
