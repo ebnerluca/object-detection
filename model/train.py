@@ -41,16 +41,9 @@ def main():
     dataset_path = os.path.join(root_path, "data_collection/dataset")  # path to dataset folder
     dataset = Dataset(dataset_path, get_transform(train=True))
 
-    # split the dataset in train and test set
-    indices = torch.randperm(len(dataset)).tolist()
-    dataset = torch.utils.data.Subset(dataset, indices[:-50])
-    dataset_test = torch.utils.data.Subset(dataset, indices[-50:])
-
     # define training and validation data loaders
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True,
                                               num_workers=4, collate_fn=utils.collate_fn)
-    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1, shuffle=False,
-                                                   num_workers=4, collate_fn=utils.collate_fn)
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model = get_model()
@@ -70,7 +63,9 @@ def main():
         # update the learning rate
         lr_scheduler.step()
         print("Saving weights...")
-        torch.save(model.state_dict(), "weights/model.pt")
+        model_dir_path = os.path.dirname(os.path.realpath(__file__))
+        weights_path = os.path.join(model_dir_path, "weights/model.pt")
+        torch.save(model.state_dict(), weights_path)
 
     print("That's it!")
 
