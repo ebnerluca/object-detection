@@ -56,7 +56,11 @@ class Dataset(torch.utils.data.Dataset):
         classes = npzfile['arr_2']
 
         # convert lists to tensors:
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        if len(boxes == 0):
+            boxes = np.zeros((0, 4))
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        else:
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(classes, dtype=torch.int64)
         image_id = torch.as_tensor(idx, dtype=torch.int64)
 
