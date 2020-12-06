@@ -5,6 +5,7 @@ import utils
 from model import Model
 from dataset import Dataset
 from engine import train_one_epoch
+import transforms as T
 
 """
 ToDo (David):
@@ -14,6 +15,14 @@ ToDo (David):
 """
 
 
+def get_transform(train):
+    transforms = []
+    transforms.append(T.ToTensor())
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5))
+    return T.Compose(transforms)
+
+
 def main():
     # TODO train loop here!
     # TODO don't forget to save the model's weights inside of `./weights`!
@@ -21,7 +30,7 @@ def main():
     # load dataset
     root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))  # path to object-detection folder
     dataset_path = os.path.join(root_path, "data_collection/dataset")  # path to dataset folder
-    dataset = Dataset(dataset_path)
+    dataset = Dataset(dataset_path, get_transform(train=False))
 
     # split the dataset in train and test set
     indices = torch.randperm(len(dataset)).tolist()

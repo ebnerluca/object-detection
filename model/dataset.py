@@ -21,10 +21,10 @@ class Dataset(torch.utils.data.Dataset):
     - image_id (Int64Tensor[1]): an image identifier. It should be unique between all the images in the dataset,
     and is used during evaluation
     """
-    # def __init__(self, root, transforms):
-    def __init__(self, root):
+    def __init__(self, root, transforms):
+    #def __init__(self, root):
         self.root = root  # path to dataset folder
-        # self.transforms = transforms  # ? probably not necessary
+        self.transforms = transforms  # ? probably not necessary
 
         # Count dataset size
         self.dataset_size = 0
@@ -51,6 +51,7 @@ class Dataset(torch.utils.data.Dataset):
 
         img = Image.fromarray(npzfile['arr_0'])
         img = img.convert("RGB")
+
         boxes = npzfile['arr_1']
         classes = npzfile['arr_2']
 
@@ -64,6 +65,9 @@ class Dataset(torch.utils.data.Dataset):
             "labels": labels,
             "image_id": image_id
         }
+
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
 
         return img, target
 
