@@ -56,7 +56,7 @@ class Dataset(torch.utils.data.Dataset):
         classes = npzfile['arr_2']
 
         # convert lists to tensors:
-        if len(boxes == 0):
+        if len(boxes) == 0:
             boxes = np.zeros((0, 4))
             boxes = torch.as_tensor(boxes, dtype=torch.float32)
         else:

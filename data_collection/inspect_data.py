@@ -3,8 +3,8 @@ import cv2
 import torch
 
 
-# dataset_folder = "./data_collection/dataset/"  # assuming you run from within repo root folder
-dataset_folder = "./eval/dataset-new/"
+dataset_folder = "./data_collection/dataset/"  # assuming you run from within repo root folder
+# dataset_folder = "./eval/dataset-new/"
 print(f"Inspecting data from folder {dataset_folder}...")
 min_idx = 0
 max_idx = 1999
