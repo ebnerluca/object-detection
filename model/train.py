@@ -39,7 +39,7 @@ def main():
     # load dataset
     root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))  # path to object-detection folder
     dataset_path = os.path.join(root_path, "data_collection/dataset")  # path to dataset folder
-    dataset = Dataset(dataset_path, get_transform(train=False))
+    dataset = Dataset(dataset_path, get_transform(train=True))
 
     # split the dataset in train and test set
     indices = torch.randperm(len(dataset)).tolist()
@@ -69,9 +69,9 @@ def main():
         print("trained one epoch")
         # update the learning rate
         lr_scheduler.step()
+        print("Saving weights...")
+        torch.save(model.state_dict(), "weights/model.pt")
 
-    print("Saving weights...")
-    torch.save(model.state_dict(), "weights/model.pt")
     print("That's it!")
 
 
