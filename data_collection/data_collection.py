@@ -31,6 +31,8 @@ def save_npz(img, boxes, classes):
         NPZ_INDEX += 1
 
     print(f"Saved {NPZ_INDEX - 1}.npz")
+    global COLLECTED_DATA
+    COLLECTED_DATA += 1
 
 
 
@@ -126,6 +128,9 @@ if __name__ == "__main__":
     DEBUG = False
     NPZ_INDEX = 0
 
+    COLLECTED_DATA = 0
+    DATA_TO_COLLECT = 1000  # we want to get 1000 data points
+
     seed(123)
     environment = launch_env()
 
@@ -135,14 +140,14 @@ if __name__ == "__main__":
 
     SAMPLE_FREQ = 10
 
-    while True:
+    while COLLECTED_DATA<DATA_TO_COLLECT:
         obs = environment.reset()
         environment.render(segment=True)
         rewards = []
 
         nb_of_steps = 0
 
-        while True:
+        while COLLECTED_DATA<DATA_TO_COLLECT:
             action = policy.predict(np.array(obs))
 
             obs, rew, done, misc = environment.step(action) # Gives non-segmented obs as numpy array
