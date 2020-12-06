@@ -1,3 +1,4 @@
+import os
 import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -12,7 +13,10 @@ class Wrapper:
 
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.model = Model()
-        self.model.load_state_dict(torch.load("weights/model.pt", map_location=self.device))
+
+        model_dir_path = os.path.dirname(os.path.realpath(__file__))
+        weights_path = os.path.join(model_dir_path, "weights/model.pt")
+        self.model.model.load_state_dict(torch.load(weights_path, map_location=self.device))
         self.model.to(self.device)
         self.model.eval()
 
