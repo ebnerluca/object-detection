@@ -20,12 +20,6 @@ class Dataset(torch.utils.data.Dataset):
 
     - image_id (Int64Tensor[1]): an image identifier. It should be unique between all the images in the dataset,
     and is used during evaluation
-
-    ?? - area (Tensor[N]): The area of the bounding box. This is used during evaluation with the COCO metric,
-    to separate the metric scores between small, medium and large boxes.
-
-    ?? - iscrowd (UInt8Tensor[N]): instances with iscrowd=True will be ignored during evaluation.
-
     """
     # def __init__(self, root, transforms):
     def __init__(self, root):
