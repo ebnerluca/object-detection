@@ -1,4 +1,6 @@
 import torch
+import torchvision
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.transforms.functional import to_tensor
 
 
@@ -46,21 +48,15 @@ class Wrapper:
 
 
 class Model(torch.nn.Module):
-    """
-    TODO (David): not sure exactly, i guess we should define the model here:
-
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-    # get number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 5)
-
-    useful link: https://pytorch.org/docs/stable/generated/torch.nn.Module.html
-    """
     def __init__(self):
         super(Model, self).__init__()
         # TODO Instantiate your weights etc here!
-        pass
+        self.model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+        in_features = self.model.roi_heads.box_predictor.cls_score.in_features
+        self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 5)  # 5 is the number of classes
 
     def forward(self, x, y=None):
+        """
+        return prediction for input x
+        """
         return self.model(x) if y is None else self.model(x, y)
