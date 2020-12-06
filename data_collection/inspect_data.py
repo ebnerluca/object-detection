@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 # dataset_folder = "./data_collection/dataset/"  # assuming you run from within repo root folder
 dataset_folder = "./eval/dataset-new/"
 print(f"Inspecting data from folder {dataset_folder}...")

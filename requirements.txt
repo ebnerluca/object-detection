@@ -16,4 +16,6 @@ duckietown-world-daffy
 pipdeptree
 
 torch
+torchvision
 Pillow>=8.0.1
+pycocotools

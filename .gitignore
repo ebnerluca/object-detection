@@ -1,6 +1,7 @@
 gym_duckietown
 requirements.txt
 venv
+# *.npz
 *.pt
 !Dockerfile.pt
 launch.json
