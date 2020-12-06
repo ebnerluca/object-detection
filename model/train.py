@@ -70,7 +70,10 @@ def main():
         # update the learning rate
         lr_scheduler.step()
         print("Saving weights...")
-        torch.save(model.state_dict(), "weights/model.pt")
+        # torch.save(model.state_dict(), "weights/model.pt")
+        model_dir_path = os.path.dirname(os.path.realpath(__file__))
+        weights_path = os.path.join(model_dir_path, "weights/model.pt")
+        torch.save(model.state_dict(), weights_path)
 
     print("That's it!")
 
