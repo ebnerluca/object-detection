@@ -164,6 +164,9 @@ if __name__ == "__main__":
 
             if nb_of_steps % SAMPLE_FREQ == 0:
                 boxes, classes = clean_segmented_image(segmented_obs)
+                # each sample needs to contain an object
+                if len(boxes) == 0:
+                    continue
                 save_npz(obs, boxes, classes)
 
             nb_of_steps += 1
