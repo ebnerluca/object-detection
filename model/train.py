@@ -4,17 +4,9 @@ import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 import utils
-from model import Model
 from dataset import Dataset
 from engine import train_one_epoch
 import transforms as T
-
-"""
-ToDo (David):
-- use Wrapper class to load devie (CPU, GPU) and model
-- use Dataset class to load training data
-- follow tutorial "main()" implementation
-"""
 
 
 def get_model():
@@ -33,15 +25,13 @@ def get_transform(train):
 
 
 def main():
-    # TODO train loop here!
-    # TODO don't forget to save the model's weights inside of `./weights`!
 
     # load dataset
     root_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))  # path to object-detection folder
     dataset_path = os.path.join(root_path, "data_collection/dataset")  # path to dataset folder
     dataset = Dataset(dataset_path, get_transform(train=True))
 
-    # define training and validation data loaders
+    # define training data loader
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True,
                                               num_workers=4, collate_fn=utils.collate_fn)
 

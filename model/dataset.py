@@ -5,26 +5,10 @@ from PIL import Image, ImageShow
 
 
 class Dataset(torch.utils.data.Dataset):
-    """
-    TODO (David):
-    * need to implement __len__ and __getitem__ methods
-    * provide image and target using __getitem__
-    * image is a PIL image of size (H, W)
 
-    * target is a dict containing the fields below:
-
-    - boxes (FloatTensor[N, 4]): the coordinates of the N bounding boxes in [x0, y0, x1, y1] format, ranging from
-    0 to W and 0 to H
-
-    - labels (Int64Tensor[N]): the label for each bounding box. 0 represents always the background class.
-
-    - image_id (Int64Tensor[1]): an image identifier. It should be unique between all the images in the dataset,
-    and is used during evaluation
-    """
     def __init__(self, root, transforms):
-    #def __init__(self, root):
         self.root = root  # path to dataset folder
-        self.transforms = transforms  # ? probably not necessary
+        self.transforms = transforms
 
         # Count dataset size
         self.dataset_size = 0
@@ -39,7 +23,7 @@ class Dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         # access items like this: dataset[index]
-        # returns image, target as specified above
+        # returns image, target as specified
 
         filename = f'{idx}.npz'
         path = os.path.join(self.root, filename)
